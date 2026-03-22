@@ -26,34 +26,53 @@
         const ctx = canvas.getContext('2d');
         
         // Configuration
-        const centerX = 400;
-        const centerY = 400;
-        const cubeSize = 150;
-        const circleRadius = 15;
+        const cubeSize = 100;
+        const circleRadius = 12;
+        const roadY = 600;  // The actual road surface level
+        const wheelDiameter = cubeSize;
         
-        let rotationAngle = 0;
+        let wheelX = 100;
+        let wheelY = roadY - wheelDiameter / 2;
+        let rotation = 0;
+        const rollSpeed = 1.5;
+        
+        function drawRoad() {
+            // Road background
+            ctx.fillStyle = '#8B7355';
+            ctx.fillRect(0, roadY, canvas.width, canvas.height);
+            
+            // Road line
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([20, 10]);
+            ctx.beginPath();
+            ctx.moveTo(0, roadY);
+            ctx.lineTo(canvas.width, roadY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
         
         function drawCube(x, y, angle) {
             const size = cubeSize;
             
             ctx.save();
-            ctx.translate(x + size / 2, y + size / 2);
+            ctx.translate(x, y);
             ctx.rotate(angle);
-            ctx.translate(-(x + size / 2), -(y + size / 2));
+            ctx.translate(-size / 2, -size / 2);
             
             // Front face
             ctx.fillStyle = '#4CAF50';
-            ctx.fillRect(x, y, size, size);
+            ctx.fillRect(0, 0, size, size);
             ctx.strokeStyle = '#2E7D32';
             ctx.lineWidth = 2;
-            ctx.strokeRect(x, y, size, size);
+            ctx.strokeRect(0, 0, size, size);
             
             // Top face
             const topPoints = [
-                [x, y],
-                [x + 15, y - 15],
-                [x + size + 15, y - 15],
-                [x + size, y]
+                [0, 0],
+                [12, -12],
+                [size + 12, -12],
+                [size, 0]
             ];
             ctx.fillStyle = '#66BB6A';
             ctx.beginPath();
@@ -68,10 +87,10 @@
             
             // Right face
             const rightPoints = [
-                [x + size, y],
-                [x + size + 15, y - 15],
-                [x + size + 15, y - 15 + size],
-                [x + size, y + size]
+                [size, 0],
+                [size + 12, -12],
+                [size + 12, -12 + size],
+                [size, size]
             ];
             ctx.fillStyle = '#388E3C';
             ctx.beginPath();
@@ -93,7 +112,7 @@
             // Shadow/back of circle
             ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.beginPath();
-            ctx.arc(x + 3, y + 3, radius, 0, Math.PI * 2);
+            ctx.arc(x + 2, y + 2, radius, 0, Math.PI * 2);
             ctx.fill();
             
             // Main circle
@@ -105,7 +124,7 @@
             // Highlight for 3D effect
             ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
             ctx.beginPath();
-            ctx.arc(x - 8, y - 8, radius / 3, 0, Math.PI * 2);
+            ctx.arc(x - 6, y - 6, radius / 3, 0, Math.PI * 2);
             ctx.fill();
             
             // Circle outline
@@ -116,23 +135,61 @@
             ctx.stroke();
         }
         
+        function calculateWheelHeight(rotation) {
+            // Normalize rotation to 0-2π range
+            const normalizedRotation = rotation % (Math.PI * 2);
+            
+            // Each 90-degree (π/2) rotation represents one edge
+            const quarterRotation = normalizedRotation % (Math.PI / 2);
+            const quarterPhase = quarterRotation / (Math.PI / 2);
+            
+            // Distance from center to corner of square
+            const diagonalHalf = (cubeSize * Math.sqrt(2)) / 2;
+            
+            // Calculate height above road surface
+            // When phase = 0: edge flat on ground, center is cubeSize/2 above road
+            // When phase = 1: next edge flat, center is cubeSize/2 above road
+            // When phase = 0.5: corner touches ground, center rises to diagonal distance
+            
+            const heightAboveRoad = cubeSize / 2 + 
+                                    (diagonalHalf - cubeSize / 2) * 
+                                    Math.sin(quarterPhase * Math.PI);
+            
+            return roadY - heightAboveRoad;
+        }
+        
+        function calculateWheelX(rotation) {
+            // Move X position based on rotation only
+            // Each full rotation (2π) moves the wheel by one side length (cubeSize)
+            // This creates proper rolling without slipping
+            const distanceTraveled = (rotation / (Math.PI * 2)) * cubeSize;
+            return 100 + distanceTraveled;
+        }
+        
         function animate() {
             // Clear canvas
-            ctx.fillStyle = 'white';
+            ctx.fillStyle = '#87CEEB';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Cube position (static, centered)
-            const cubeX = centerX - cubeSize / 2;
-            const cubeY = centerY - cubeSize / 2;
+            // Draw road
+            drawRoad();
             
-            // Draw cube with rotation
-            drawCube(cubeX, cubeY, rotationAngle);
+            // Update rotation
+            rotation += rollSpeed * 0.02; // Slower rotation
             
-            // Draw center circle
-            drawCircle(centerX, centerY);
+            // Calculate wheel position based on proper rolling physics
+            wheelX = calculateWheelX(rotation);
+            wheelY = calculateWheelHeight(rotation);
             
-            // Update rotation angle
-            rotationAngle += 0.02;
+            // Reset wheel when it goes off screen
+            if (wheelX > canvas.width + cubeSize) {
+                wheelX = -cubeSize;
+                rotation = 0;
+            }
+            
+            // Draw wheel
+            drawCube(wheelX, wheelY, rotation);
+            drawCircle(wheelX, wheelY);
             
             // Continue animation
             requestAnimationFrame(animate);
