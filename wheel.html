@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Square Canvas</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid #333;
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas" width="800" height="800"></canvas>
+    <script>
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Configuration
+        const centerX = 400;
+        const centerY = 400;
+        const cubeSize = 150;
+        const circleRadius = 15;
+        
+        let rotationAngle = 0;
+        
+        function drawCube(x, y, angle) {
+            const size = cubeSize;
+            
+            ctx.save();
+            ctx.translate(x + size / 2, y + size / 2);
+            ctx.rotate(angle);
+            ctx.translate(-(x + size / 2), -(y + size / 2));
+            
+            // Front face
+            ctx.fillStyle = '#4CAF50';
+            ctx.fillRect(x, y, size, size);
+            ctx.strokeStyle = '#2E7D32';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, size, size);
+            
+            // Top face
+            const topPoints = [
+                [x, y],
+                [x + 15, y - 15],
+                [x + size + 15, y - 15],
+                [x + size, y]
+            ];
+            ctx.fillStyle = '#66BB6A';
+            ctx.beginPath();
+            ctx.moveTo(topPoints[0][0], topPoints[0][1]);
+            for (let i = 1; i < topPoints.length; i++) {
+                ctx.lineTo(topPoints[i][0], topPoints[i][1]);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#2E7D32';
+            ctx.stroke();
+            
+            // Right face
+            const rightPoints = [
+                [x + size, y],
+                [x + size + 15, y - 15],
+                [x + size + 15, y - 15 + size],
+                [x + size, y + size]
+            ];
+            ctx.fillStyle = '#388E3C';
+            ctx.beginPath();
+            ctx.moveTo(rightPoints[0][0], rightPoints[0][1]);
+            for (let i = 1; i < rightPoints.length; i++) {
+                ctx.lineTo(rightPoints[i][0], rightPoints[i][1]);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#1B5E20';
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+        
+        function drawCircle(x, y) {
+            const radius = circleRadius;
+            
+            // Shadow/back of circle
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+            ctx.beginPath();
+            ctx.arc(x + 3, y + 3, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Main circle
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Highlight for 3D effect
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.arc(x - 8, y - 8, radius / 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Circle outline
+            ctx.strokeStyle = '#DAA520';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        
+        function animate() {
+            // Clear canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Cube position (static, centered)
+            const cubeX = centerX - cubeSize / 2;
+            const cubeY = centerY - cubeSize / 2;
+            
+            // Draw cube with rotation
+            drawCube(cubeX, cubeY, rotationAngle);
+            
+            // Draw center circle
+            drawCircle(centerX, centerY);
+            
+            // Update rotation angle
+            rotationAngle += 0.02;
+            
+            // Continue animation
+            requestAnimationFrame(animate);
+        }
+        
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>
